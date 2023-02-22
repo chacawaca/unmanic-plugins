@@ -4,7 +4,7 @@
         2
     ],
     "description": "Closed captions / subtitles extraction from any media file",
-    "icon": "https://raw.githubusercontent.com/chacawaca/unmanic/unmanic.plugin.ccextractor/master/icon.png",
+    "icon": "https://raw.githubusercontent.com/chacawaca/unmanic-plugins/repo/ccextractor/icon.png",
     "id": "ccextractor",
     "name": "CCextractor",
     "priorities": {
