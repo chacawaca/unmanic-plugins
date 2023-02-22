@@ -1,0 +1,15 @@
+{
+    "author": "Chacawaca",
+    "compatibility": [
+        2
+    ],
+    "description": "Closed captions / subtitles extraction from any media file",
+    "icon": "https://raw.githubusercontent.com/chacawaca/unmanic/unmanic.plugin.ccextractor/master/icon.png",
+    "id": "ccextractor",
+    "name": "CCextractor",
+    "priorities": {
+        "on_worker_process": 0
+    },
+    "tags": "subtitle",
+    "version": "0.0.1"
+}
