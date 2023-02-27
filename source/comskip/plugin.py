@@ -32,12 +32,12 @@ import glob
 import shutil
 
 from configparser import NoSectionError, NoOptionError
-from comskip_edl.lib.ffmpeg import Parser, Probe
+from comskip.lib.ffmpeg import Parser, Probe
 from unmanic.libs.unplugins.settings import PluginSettings
 from unmanic.libs.directoryinfo import UnmanicDirectoryInfo
 
 # Configure plugin logger
-logger = logging.getLogger("Unmanic.Plugin.comskip_edl")
+logger = logging.getLogger("Unmanic.Plugin.comskip")
 
 
 class Settings(PluginSettings):
