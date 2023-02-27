@@ -1,12 +1,12 @@
 {
-    "author": "Chacawaca",
+    "author": "Josh.5","Chacawaca",
     "compatibility": [
         2
     ],
     "description": "Generate EDL files with Comskip",
-    "icon": "icon.png",
-    "id": "comskip_test",
-    "name": "Comskip-test",
+    "icon": "https://raw.githubusercontent.com/chacawaca/unmanic-plugins/repo/comskip/icon.png",
+    "id": "comskip_edl",
+    "name": "Comskip-edl",
     "priorities": {
         "on_library_management_file_test":2,
         "on_worker_process": 2,
