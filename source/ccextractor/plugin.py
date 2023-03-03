@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import json
 import hashlib
 import logging
 import mimetypes
 import os
 import stat
+import jsonata
+
 from configparser import NoSectionError, NoOptionError
 from ccextractor.lib.ffmpeg import Parser, Probe
 from unmanic.libs.unplugins.settings import PluginSettings
@@ -17,7 +20,7 @@ logger = logging.getLogger("Unmanic.Plugin.ccextractor")
 
 class Settings(PluginSettings):
     settings = {
-        'limit_to_extensions': False,
+        "limit_to_extensions": False,
         "allowed_extensions":  'ts',
     }
 
@@ -65,28 +68,16 @@ def file_ends_in_allowed_extensions(path, allowed_extensions):
 
 
 def file_already_processed(path):
-    directory_info = UnmanicDirectoryInfo(os.path.dirname(path))
-
-    try:
-        processed = directory_info.get('ccextractor', os.path.basename(path))
-    except NoSectionError as e:
-        processed = ''
-    except NoOptionError as e:
-        processed = ''
-    except Exception as e:
-        logger.debug("Unknown exception {}.".format(e))
-        processed = ''
-
+    
     # Check for srt file with the same name as the video file
     file_dirname = os.path.dirname(path)
     file_sans_ext = os.path.splitext(os.path.basename(path))[0]
     ccextractor_file_out = "{}.srt".format(file_sans_ext)
-
-    if processed in ['ccextractor_file_out']:
-        logger.debug("File was previously processed with {}.".format(processed))
+     
+    if os.path.exists(os.path.join(file_dirname, ccextractor_file_out)):
+        logger.info("File was previously processed with ccextractor")
         # This stream already has been processed
         return True
-
 
     # Default to...
     return False
@@ -136,7 +127,8 @@ def on_library_management_file_test(data):
         logger.debug("File has not been processed previously '{}'. It should be added to task list.".format(abspath))
 
     return data
-
+    
+    
 def on_worker_process(data):
     """
     Runner function - enables additional configured processing jobs during the worker stages of a task.
@@ -185,19 +177,43 @@ def on_worker_process(data):
         # Build args
         args = build_ccextractor_args(file_in, settings)
         
-        # Generate command
-        data['exec_command'] = args
+        probe_info = probe.get_probe()
+        file_probe_streams = probe_info.get('streams')
+        if not file_probe_streams:
+            return False
         
-        # Set the parser
-        parser = Parser(logger)
-        parser.set_probe(probe)
-        data['command_progress_parser'] = parser.parse_progress
+        # Report probe data for debug purpose
+        logger.debug("Probe stream report : {}".format(file_probe_streams))
+
+        discovered_values = False
+        context = jsonata.Context()
         
-        # Mark file as being processed for post-processor
-        src_file_hash = hashlib.md5(original_file_path.encode('utf8')).hexdigest()
-        profile_directory = settings.get_profile_directory()
-        plugin_file_lockfile = os.path.join(profile_directory, '{}.lock'.format(src_file_hash))
-        with open(plugin_file_lockfile, 'w') as f:
-            pass
+        # Check if subtitle or data is present, if not dont execute ccextractor
+        if context('$exists(streams[codec_type="data"][0].codec_type)', probe_info):
+            discovered_values = context('$.streams[codec_type="data"][0].codec_name', probe_info)
+            logger.info("Data found : {}".format(discovered_values))
+        elif context('$exists(streams[codec_type="subtitle"][0].codec_type)', probe_info):
+            discovered_values = context('$.streams[codec_type="subtitle"][0].codec_name', probe_info)
+            logger.info("Subtitle found : {}".format(discovered_values))
+        else:
+            logger.info("No subtitle found")
+            
+        # Excute CCextractor only if data or subtitle are found
+        if discovered_values:
+            # Set the parser
+            parser = Parser(logger)
+            parser.set_probe(probe)
+            data['command_progress_parser'] = parser.parse_progress
+            
+            logger.info("Execute CCextractor for {}.".format(file_in))
+            data['exec_command'] = args        
+            
+            # Mark file as being processed for post-processor
+            src_file_hash = hashlib.md5(original_file_path.encode('utf8')).hexdigest()
+            profile_directory = settings.get_profile_directory()
+            plugin_file_lockfile = os.path.join(profile_directory, '{}.lock'.format(src_file_hash))
+            with open(plugin_file_lockfile, 'w') as f:
+                 pass
+
         
     return data
